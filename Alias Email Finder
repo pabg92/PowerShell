@@ -1,0 +1,80 @@
+# p4blo.dev Alias Email Finder
+# Version: 1.0
+# Author: p4blo.dev
+# Description: This script finds all alias emails within your tenant
+
+function Show-BrandedBanner {
+    Write-Host @"
+######################################################
+# ____  _  _   ____  _     ___   ____  _______     __#
+#|  _ \| || | | __ )| |   / _ \ |  _ \| ____\ \   / /#
+#| |_) | || |_|  _ \| |  | | | || | | |  _|  \ \ / / #
+#|  __/|__   _| |_) | |__| |_| || |_| | |___  \ V /  #
+#|_|      |_| |____/|_____\___(_)____/|_____|  \_/   #
+######################################################
+                                                 
+   Alias Email Finder - p4blo.dev
+"@ -ForegroundColor Cyan
+}
+
+function Write-BrandedMessage {
+    param (
+        [string]$Message
+    )
+    Write-Host "[p4blo.dev]" -ForegroundColor Cyan -NoNewline
+    Write-Host " $Message"
+}
+
+# Display the branded banner
+Show-BrandedBanner
+
+# Connect to Exchange Online
+Write-BrandedMessage "Connecting to Exchange Online..."
+Connect-ExchangeOnline
+
+# Get all mailboxes
+Write-BrandedMessage "Retrieving all mailboxes..."
+$mailboxes = Get-Mailbox -ResultSize Unlimited
+
+# Initialize an array to store the results
+$results = @()
+
+# Loop through each mailbox
+$totalMailboxes = $mailboxes.Count
+$currentMailbox = 0
+
+foreach ($mailbox in $mailboxes) {
+    $currentMailbox++
+    $percentComplete = [math]::Round(($currentMailbox / $totalMailboxes) * 100, 2)
+    Write-Progress -Activity "Processing Mailboxes" -Status "Progress: $percentComplete%" -PercentComplete $percentComplete
+
+    # Get the primary SMTP address
+    $primarySmtpAddress = $mailbox.PrimarySmtpAddress
+
+    # Get all alias email addresses
+    $aliasEmails = $mailbox.EmailAddresses | Where-Object {$_ -clike "smtp:*" -and $_ -notlike "*$primarySmtpAddress"} | ForEach-Object {$_.Substring(5)}
+
+    # If there are alias emails, add them to the results
+    if ($aliasEmails) {
+        $results += [PSCustomObject]@{
+            Mailbox = $mailbox.DisplayName
+            PrimaryEmail = $primarySmtpAddress
+            AliasEmails = $aliasEmails -join ', '
+        }
+    }
+}
+
+# Export the results to a CSV file
+$csvPath = "p4blo_dev_AliasEmails.csv"
+$results | Export-Csv -Path $csvPath -NoTypeInformation
+
+# Display the results in the console
+$results | Format-Table -AutoSize
+
+# Disconnect from Exchange Online
+Write-BrandedMessage "Disconnecting from Exchange Online..."
+Disconnect-ExchangeOnline -Confirm:$false
+
+Write-BrandedMessage "Script completed. Results exported to $csvPath"
+Write-BrandedMessage "Thank you for using p4blo.dev Alias Email Finder!"
+

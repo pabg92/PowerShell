@@ -1,7 +1,7 @@
 # p4blo.dev Alias Email Finder
 # Version: 1.0
 # Author: p4blo.dev
-# Description: This script finds all alias emails within your tenant
+# Description: This script finds all alias emails within your tenant and exports to excel
 
 function Show-BrandedBanner {
     Write-Host @"

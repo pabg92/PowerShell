@@ -3,7 +3,7 @@ Import-Module PnP.PowerShell
 Import-Module ImportExcel
 
 # SharePoint site URL
-$siteUrl = "https://championsuk.sharepoint.com/sites/ChampionsUKPLC/"
+$siteUrl = "www.sharepointsiteurl.com"
 
 # Connect to SharePoint
 try {

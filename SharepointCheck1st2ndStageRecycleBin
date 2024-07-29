@@ -1,0 +1,35 @@
+# Import the PnP PowerShell module
+Import-Module PnP.PowerShell
+
+# SharePoint site URL
+$siteUrl = "https://championsuk.sharepoint.com/sites/ChampionsUKPLC/"
+
+# Connect to SharePoint site
+Connect-PnPOnline -Url $siteUrl -Interactive
+
+# Function to convert bytes to human-readable format
+function Format-FileSize([long]$size) {
+    $sizes = 'Bytes,KB,MB,GB,TB'
+    $order = 0
+    while ($size -ge 1024 -and $order -lt 4) {
+        $order++
+        $size /= 1024.0
+    }
+    "{0:N2} {1}" -f $size, ($sizes -split ',')[$order]
+}
+
+# Get first stage recycle bin items
+$firstStageItems = Get-PnPRecycleBinItem -FirstStage
+$firstStageSize = ($firstStageItems | Measure-Object -Property Size -Sum).Sum
+
+# Get second stage recycle bin items
+$secondStageItems = Get-PnPRecycleBinItem -SecondStage
+$secondStageSize = ($secondStageItems | Measure-Object -Property Size -Sum).Sum
+
+# Output results
+Write-Host "First Stage Recycle Bin Size: $(Format-FileSize $firstStageSize)"
+Write-Host "Second Stage Recycle Bin Size: $(Format-FileSize $secondStageSize)"
+Write-Host "Total Recycle Bin Size: $(Format-FileSize ($firstStageSize + $secondStageSize))"
+
+# Disconnect from SharePoint
+Disconnect-PnPOnline

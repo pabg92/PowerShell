@@ -1,8 +1,20 @@
+<#
+.SYNOPSIS
+    SharePoint Recycle Bin Size Checker
+.DESCRIPTION
+    This script checks the size of the first and second stage recycle bins in a SharePoint site.
+.NOTES
+    File Name      : SharePoint-RecycleBin-Size-Checker.ps1
+    Author         : p4blo.dev
+    Prerequisite   : PnP.PowerShell module
+    Copyright 2024 : p4blo.dev
+#>
+
 # Import the PnP PowerShell module
 Import-Module PnP.PowerShell
 
 # SharePoint site URL
-$siteUrl = "https://championsuk.sharepoint.com/sites/ChampionsUKPLC/"
+$siteUrl = "siteurl/"
 
 # Connect to SharePoint site
 Connect-PnPOnline -Url $siteUrl -Interactive
@@ -27,9 +39,13 @@ $secondStageItems = Get-PnPRecycleBinItem -SecondStage
 $secondStageSize = ($secondStageItems | Measure-Object -Property Size -Sum).Sum
 
 # Output results
+Write-Host "p4blo.dev SharePoint Recycle Bin Size Checker"
+Write-Host "--------------------------------------------"
 Write-Host "First Stage Recycle Bin Size: $(Format-FileSize $firstStageSize)"
 Write-Host "Second Stage Recycle Bin Size: $(Format-FileSize $secondStageSize)"
 Write-Host "Total Recycle Bin Size: $(Format-FileSize ($firstStageSize + $secondStageSize))"
+Write-Host "--------------------------------------------"
+Write-Host "Script by p4blo.dev"
 
 # Disconnect from SharePoint
 Disconnect-PnPOnline

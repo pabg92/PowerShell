@@ -1,0 +1,107 @@
+<#
+.SYNOPSIS
+    SharePoint File Version Cleanup Script
+.DESCRIPTION
+    This script reads file information from an Excel file and removes excess versions of SharePoint files.
+.NOTES
+    File Name      : SharePoint-Version-Cleanup.ps1
+    Author         : p4blo.dev
+    Prerequisite   : PnP.PowerShell and ImportExcel modules
+    Copyright 2024 : p4blo.dev
+#>
+
+# Import required modules
+Import-Module PnP.PowerShell
+Import-Module ImportExcel
+
+# Script information
+$scriptVersion = "1.0"
+$scriptDate = "2024-07-29"
+
+# SharePoint site URL
+$siteUrl = "https://championsuk.sharepoint.com/sites"
+
+# Path to the Excel file with file information
+$excelPath = "C:\Users\p4blo.dev"
+
+# Function to display branded messages
+function Write-BrandedMessage {
+    param (
+        [string]$Message,
+        [System.ConsoleColor]$Color = 'White'
+    )
+    Write-Host "[p4blo.dev] $Message" -ForegroundColor $Color
+}
+
+# Display script header
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host "  SharePoint File Version Cleanup Script" -ForegroundColor Cyan
+Write-Host "  by p4blo.dev" -ForegroundColor Cyan
+Write-Host "  Version: $scriptVersion | Date: $scriptDate" -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+
+# Connect to SharePoint
+try {
+    Connect-PnPOnline -Url $siteUrl -Interactive
+    Write-BrandedMessage "Connected to SharePoint site: $siteUrl" -Color Green
+}
+catch {
+    Write-BrandedMessage "Error connecting to SharePoint: $($_.Exception.Message)" -Color Red
+    exit
+}
+
+# Function to delete excess versions
+function Remove-ExcessVersions {
+    param (
+        [string]$fileUrl,
+        [int]$versionsToKeep = 2
+    )
+
+    try {
+        $file = Get-PnPFile -Url $fileUrl -AsListItem
+        $versions = Get-PnPProperty -ClientObject $file -Property Versions
+
+        if ($versions.Count -gt $versionsToKeep) {
+            $versionsToDelete = $versions.Count - $versionsToKeep
+            Write-BrandedMessage "Deleting $versionsToDelete versions from $fileUrl" -Color Yellow
+
+            for ($i = 0; $i -lt $versionsToDelete; $i++) {
+                Remove-PnPFileVersion -Url $fileUrl -Identity $versions[$i].VersionId -Force
+            }
+
+            Write-BrandedMessage "Deleted $versionsToDelete versions from $fileUrl" -Color Green
+        }
+        else {
+            Write-BrandedMessage "No excess versions to delete for $fileUrl" -Color Cyan
+        }
+    }
+    catch {
+        Write-BrandedMessage "Error processing $($fileUrl): $($_.Exception.Message)" -Color Red
+    }
+}
+
+# Read the Excel file
+$fileList = Import-Excel -Path $excelPath
+
+# Counter for processed files
+$processedFiles = 0
+$totalFiles = $fileList.Count
+
+# Process each file
+foreach ($file in $fileList) {
+    $processedFiles++
+    Write-BrandedMessage "Processing file $processedFiles of $totalFiles" -Color Cyan
+    Remove-ExcessVersions -fileUrl $file.URL -versionsToKeep 2
+}
+
+Write-BrandedMessage "Version cleanup completed. Processed $processedFiles files." -Color Green
+
+# Disconnect from SharePoint
+Disconnect-PnPOnline
+Write-BrandedMessage "Disconnected from SharePoint." -Color Green
+
+# Display script footer
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host "  Script execution completed" -ForegroundColor Cyan
+Write-Host "  Thank you for using p4blo.dev tools" -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan

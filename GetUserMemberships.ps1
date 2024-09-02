@@ -1,6 +1,27 @@
-#Script for seeing which groups and dl's a specific user is part of 
-"run with the arg .\GetUserMemberships.ps1
-#Get-UserMemberships -Username "p4blo.dev"
+# P4BLO DEV Get User Memberships
+# Version: 1.0
+# Author: P4BLO DEV
+# Description: This script retrieves all groups and distribution lists that a specified user is a member of in Active Directory.
+
+function Show-BrandedBanner {
+    Write-Host @"
+██████╗ ██╗  ██╗██████╗ ██╗      ██████╗ 
+██╔══██╗██║  ██║██╔══██╗██║     ██╔═══██╗
+██████╔╝███████║██████╔╝██║     ██║   ██║
+██╔═══╝ ╚════██║██╔══██╗██║     ██║   ██║
+██║          ██║██████╔╝███████╗╚██████╔╝
+╚═╝          ╚═╝╚═════╝ ╚══════╝ ╚═════╝ 
+██████╗ ███████╗██╗   ██╗
+██╔══██╗██╔════╝██║   ██║
+██║  ██║█████╗  ██║   ██║
+██║  ██║██╔══╝  ╚██╗ ██╔╝
+██████╔╝███████╗ ╚████╔╝ 
+╚═════╝ ╚══════╝  ╚═══╝  
+"@
+}
+
+# Display the branded banner
+Show-BrandedBanner
 
 # Import the Active Directory module
 Import-Module ActiveDirectory
@@ -45,3 +66,5 @@ function Get-UserMemberships {
     }
 }
 
+# Example usage:
+# Get-UserMemberships -Username "p4blo.dev"

@@ -1,3 +1,28 @@
+# P4BLO DEV Get Current or Last Logged-In User
+# Version: 1.0
+# Author: P4BLO DEV
+# Description: This script retrieves information about the currently logged-in user or the last logged-in user on a specified computer.
+
+function Show-BrandedBanner {
+    Write-Host @"
+██████╗ ██╗  ██╗██████╗ ██╗      ██████╗ 
+██╔══██╗██║  ██║██╔══██╗██║     ██╔═══██╗
+██████╔╝███████║██████╔╝██║     ██║   ██║
+██╔═══╝ ╚════██║██╔══██╗██║     ██║   ██║
+██║          ██║██████╔╝███████╗╚██████╔╝
+╚═╝          ╚═╝╚═════╝ ╚══════╝ ╚═════╝ 
+██████╗ ███████╗██╗   ██╗
+██╔══██╗██╔════╝██║   ██║
+██║  ██║█████╗  ██║   ██║
+██║  ██║██╔══╝  ╚██╗ ██╔╝
+██████╔╝███████╗ ╚████╔╝ 
+╚═════╝ ╚══════╝  ╚═══╝  
+"@
+}
+
+# Display the branded banner
+Show-BrandedBanner
+
 # Function to get the current or last logged-in user
 function Get-LoggedInUser {
     param (
@@ -38,7 +63,7 @@ function Get-LoggedInUser {
         return New-Object PSObject -Property $output
     }
     catch {
-        Write-Error 'Error accessing $ComputerName: $_'
+        Write-Error "Error accessing $ComputerName: $_"
     }
 }
 

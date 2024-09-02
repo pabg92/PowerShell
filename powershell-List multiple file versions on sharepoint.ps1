@@ -1,3 +1,28 @@
+# P4BLO DEV List Multiple File Versions on SharePoint
+# Version: 1.0
+# Author: P4BLO DEV
+# Description: This script scans a SharePoint document library for files with multiple versions or specific file types, and exports the results to an Excel file.
+
+function Show-BrandedBanner {
+    Write-Host @"
+██████╗ ██╗  ██╗██████╗ ██╗      ██████╗ 
+██╔══██╗██║  ██║██╔══██╗██║     ██╔═══██╗
+██████╔╝███████║██████╔╝██║     ██║   ██║
+██╔═══╝ ╚════██║██╔══██╗██║     ██║   ██║
+██║          ██║██████╔╝███████╗╚██████╔╝
+╚═╝          ╚═╝╚═════╝ ╚══════╝ ╚═════╝ 
+██████╗ ███████╗██╗   ██╗
+██╔══██╗██╔════╝██║   ██║
+██║  ██║█████╗  ██║   ██║
+██║  ██║██╔══╝  ╚██╗ ██╔╝
+██████╔╝███████╗ ╚████╔╝ 
+╚═════╝ ╚══════╝  ╚═══╝  
+"@
+}
+
+# Display the branded banner
+Show-BrandedBanner
+
 # Import required modules
 Import-Module PnP.PowerShell
 Import-Module ImportExcel

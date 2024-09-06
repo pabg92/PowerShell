@@ -1,0 +1,15 @@
+# Import the required module
+Import-Module ADSync
+
+# Start AD Sync
+Start-ADSyncSyncCycle -PolicyType Delta
+
+# Wait for sync to complete
+while (Get-ADSyncScheduler | Select-Object -ExpandProperty SyncCycleInProgress) {
+    Write-Host "Sync in progress... Please wait."
+    Start-Sleep -Seconds 5
+}
+
+Write-Host "AD Sync completed successfully."
+
+#Needs .dev branding - etc

@@ -32,8 +32,8 @@ param(
 )
 
 # Script information
-$scriptVersion = "1.0"
-$scriptDate = "2024-07-29"
+$scriptVersion = "1.1"
+$scriptDate = "2024-11-23"
 
 # SharePoint site URL
 $siteUrl = "https://championsuk.sharepoint.com/sites"

@@ -13,6 +13,23 @@
 # Import required modules
 Import-Module PnP.PowerShell
 Import-Module ImportExcel
+Import-Module ScheduledTasks
+
+# Parameters
+param(
+    [Parameter(Mandatory=$false)]
+    [int]$versionsToKeep = 2,
+    
+    [Parameter(Mandatory=$false)]
+    [ValidateSet("All", "MajorOnly", "LastMonth")]
+    [string]$retentionPolicy = "All",
+    
+    [Parameter(Mandatory=$false)]
+    [switch]$scheduleTask,
+    
+    [Parameter(Mandatory=$false)]
+    [string]$scheduleTime = "03:00"
+)
 
 # Script information
 $scriptVersion = "1.0"
@@ -51,28 +68,54 @@ catch {
 }
 
 # Function to delete excess versions
+# Function to calculate file size
+function Get-FileSize {
+    param (
+        [Microsoft.SharePoint.Client.File]$file
+    )
+    return $file.Length/1MB
+}
+
 function Remove-ExcessVersions {
     param (
         [string]$fileUrl,
-        [int]$versionsToKeep = 2
+        [int]$versionsToKeep = 2,
+        [string]$retentionPolicy = "All"
     )
 
     try {
         $file = Get-PnPFile -Url $fileUrl -AsListItem
         $versions = Get-PnPProperty -ClientObject $file -Property Versions
+        $initialSize = Get-FileSize -file $file
 
-        if ($versions.Count -gt $versionsToKeep) {
-            $versionsToDelete = $versions.Count - $versionsToKeep
+        # Filter versions based on retention policy
+        $versionsToProcess = switch ($retentionPolicy) {
+            "MajorOnly" { $versions | Where-Object { $_.IsCurrentVersion -or $_.VersionLabel -notmatch "\." } }
+            "LastMonth" { $versions | Where-Object { $_.Created -gt (Get-Date).AddMonths(-1) } }
+            default { $versions }
+        }
+
+        if ($versionsToProcess.Count -gt $versionsToKeep) {
+            $versionsToDelete = $versionsToProcess.Count - $versionsToKeep
             Write-BrandedMessage "Deleting $versionsToDelete versions from $fileUrl" -Color Yellow
 
             for ($i = 0; $i -lt $versionsToDelete; $i++) {
-                Remove-PnPFileVersion -Url $fileUrl -Identity $versions[$i].VersionId -Force
+                Remove-PnPFileVersion -Url $fileUrl -Identity $versionsToProcess[$i].VersionId -Force
             }
 
+            # Calculate space saved
+            $finalSize = Get-FileSize -file $file
+            $spaceSaved = $initialSize - $finalSize
+            
             Write-BrandedMessage "Deleted $versionsToDelete versions from $fileUrl" -Color Green
+            Write-BrandedMessage "Space saved: $($spaceSaved.ToString('N2')) MB" -Color Green
+            
+            # Return space saved for total calculation
+            return $spaceSaved
         }
         else {
             Write-BrandedMessage "No excess versions to delete for $fileUrl" -Color Cyan
+            return 0
         }
     }
     catch {
@@ -87,14 +130,30 @@ $fileList = Import-Excel -Path $excelPath
 $processedFiles = 0
 $totalFiles = $fileList.Count
 
+# Initialize total space saved
+$totalSpaceSaved = 0
+
 # Process each file
 foreach ($file in $fileList) {
     $processedFiles++
     Write-BrandedMessage "Processing file $processedFiles of $totalFiles" -Color Cyan
-    Remove-ExcessVersions -fileUrl $file.URL -versionsToKeep 2
+    $spaceSaved = Remove-ExcessVersions -fileUrl $file.URL -versionsToKeep $versionsToKeep -retentionPolicy $retentionPolicy
+    $totalSpaceSaved += $spaceSaved
 }
 
 Write-BrandedMessage "Version cleanup completed. Processed $processedFiles files." -Color Green
+Write-BrandedMessage "Total space saved: $($totalSpaceSaved.ToString('N2')) MB" -Color Green
+
+# Schedule task if requested
+if ($scheduleTask) {
+    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-File `"$($MyInvocation.MyCommand.Path)`" -versionsToKeep $versionsToKeep -retentionPolicy $retentionPolicy"
+    $trigger = New-ScheduledTaskTrigger -Daily -At $scheduleTime
+    $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -RunLevel Highest
+    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
+    
+    Register-ScheduledTask -TaskName "SharePoint Version Cleanup" -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force
+    Write-BrandedMessage "Scheduled task created to run daily at $scheduleTime" -Color Green
+}
 
 # Disconnect from SharePoint
 Disconnect-PnPOnline
